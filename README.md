@@ -4,6 +4,6 @@
 ## Flutter中Widget的使用
 - Overlay的使用（包括widget位置的获取等）  
   
-[自定义下拉菜单效果1](imgs/custom_popup_menu_btn1.png)
-[自定义下拉菜单效果2](imgs/custom_popup_menu_btn2.png)
+![自定义下拉菜单效果1](imgs/custom_popup_menu_btn1.png)
+![自定义下拉菜单效果2](imgs/custom_popup_menu_btn2.png)
 
