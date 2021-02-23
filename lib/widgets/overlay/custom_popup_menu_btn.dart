@@ -1,8 +1,6 @@
 import 'dart:ui';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 
 const double defaultMenuItemHeight = 42.0;
 
@@ -72,9 +70,10 @@ class PopupMenuBtn<T> extends StatefulWidget {
     this.controller,
     this.enableBlur = true,
     this.backgroundClipper,
-    this.backgroundColor,
+    this.backgroundColor = Colors.grey,
     this.backgroundConstraints,
     this.backgroundDecoration,
+    this.fullScreenWidth = true,
   }) : super(key: key);
   final List<T> list;
   final ValueChanged<int> onSelected;
@@ -88,6 +87,7 @@ class PopupMenuBtn<T> extends StatefulWidget {
   final Color backgroundColor;
   final BoxConstraints backgroundConstraints;
   final BoxDecoration backgroundDecoration;
+  final bool fullScreenWidth;
 
   @override
   _PopupMenuBtnState<T> createState() => _PopupMenuBtnState<T>();
@@ -105,7 +105,7 @@ class _PopupMenuBtnState<T> extends State<PopupMenuBtn<T>> {
     ///判断是否为null，如果是null则给其默认值
     _controller ??= PopupMenuController();
     _initMenu();
-    Future<void>.delayed(Duration(milliseconds: 200), () {
+    Future<void>.delayed(const Duration(milliseconds: 200), () {
       _calculationLocation();
       if (_controller.isShow) {
         _controller.showMenu(context);
@@ -117,7 +117,7 @@ class _PopupMenuBtnState<T> extends State<PopupMenuBtn<T>> {
   @override
   void reassemble() {
     super.reassemble();
-    Future<void>.delayed(Duration(milliseconds: 100), () {
+    Future<void>.delayed(const Duration(milliseconds: 100), () {
       _calculationLocation();
     });
   }
@@ -142,11 +142,7 @@ class _PopupMenuBtnState<T> extends State<PopupMenuBtn<T>> {
       ),
       Offset.zero & overlay.size,
     );
-    double dx = position.left - button.size.width;
-    dx = dx < 0 ? 0.0 : dx;
-
-    _controller._position = RelativeRect.fromLTRB(
-        dx, position.top, position.right, position.bottom);
+    _controller._position = position;
   }
 
   ///初始化Overlay
@@ -201,6 +197,7 @@ class _PopupMenuWidget<T> extends StatefulWidget {
     this.backgroundClipper,
     this.backgroundDecoration,
     this.backgroundConstraints,
+    this.fullScreenWidth = true,
   }) : super(key: key);
   final List<T> list;
   final VoidCallback onCancel;
@@ -213,6 +210,7 @@ class _PopupMenuWidget<T> extends StatefulWidget {
   final Color backgroundColor;
   final BoxConstraints backgroundConstraints;
   final BoxDecoration backgroundDecoration;
+  final bool fullScreenWidth;
 
   @override
   __PopupMenuWidgetState<T> createState() => __PopupMenuWidgetState<T>();
@@ -252,10 +250,11 @@ class __PopupMenuWidgetState<T> extends State<_PopupMenuWidget<T>> {
     ///添加条目
     for (int i = 0; i < list.length; i++) {
       final T value = list[i];
-      children.add(SizedBox(
+      final Widget item = SizedBox(
         height: controller.menuItemHeight,
         child: widget.itemBuilder(context, value, i),
-      ));
+      );
+      children.add(item);
       if (widget.separatedBuilder != null) {
         children.add(widget.separatedBuilder(context, value, i));
       }
@@ -265,6 +264,7 @@ class __PopupMenuWidgetState<T> extends State<_PopupMenuWidget<T>> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: children,
     );
+
     child = SingleChildScrollView(
       child: child,
     );
@@ -274,8 +274,10 @@ class __PopupMenuWidgetState<T> extends State<_PopupMenuWidget<T>> {
       clipper: widget.backgroundClipper,
       child: Container(
         constraints: widget.backgroundConstraints,
-        decoration: widget.backgroundDecoration,
-        color: widget.backgroundColor,
+        decoration: widget.backgroundDecoration ??
+            BoxDecoration(
+              color: widget.backgroundColor,
+            ),
         child: child,
       ),
     );
@@ -301,18 +303,24 @@ class __PopupMenuWidgetState<T> extends State<_PopupMenuWidget<T>> {
       );
     }
     final List<Widget> blurChildren = <Widget>[];
+    double left = position.left;
+    if (widget.fullScreenWidth) {
+      left = 0.0;
+    } else {
+      left = position.left;
+    }
 
     ///设置显示位置和模糊效果
     if (widget.menuLocation == PopupMenuLocation.bottom) {
       child = Padding(
-        padding: EdgeInsets.only(left: position.left, top: position.top),
+        padding: EdgeInsets.only(left: left, top: position.top),
         child: child,
       );
       blurChildren.add(child);
       blurChildren.add(blur);
     } else if (widget.menuLocation == PopupMenuLocation.top) {
       child = Padding(
-        padding: EdgeInsets.only(left: position.left, bottom: position.bottom),
+        padding: EdgeInsets.only(left: left, bottom: position.bottom),
         child: child,
       );
       blurChildren.add(blur);
@@ -395,81 +403,5 @@ class CheckedPopupMenuItem<T> extends StatelessWidget {
       child: widget,
     );
     return widget;
-  }
-}
-
-class PopupBtn extends StatelessWidget {
-  const PopupBtn(
-      {Key key,
-      this.list,
-      this.onSelected,
-      this.controller,
-      this.location = PopupMenuLocation.bottom})
-      : super(key: key);
-  final List<String> list;
-  final ValueChanged<int> onSelected;
-  final PopupMenuController controller;
-  final PopupMenuLocation location;
-
-  @override
-  Widget build(BuildContext context) {
-    return PopupMenuBtn<String>(
-      list: list,
-      menuLocation: location,
-      controller: controller,
-      childBuilder: (BuildContext context, String value, bool showMenu) {
-        return Container(
-          height: 42,
-          child: Row(
-            children: <Widget>[
-              Text(
-                value,
-                style: TextStyle(
-                    fontSize: 14, color: showMenu ? Colors.blue : Colors.grey),
-              ),
-              Icon(
-                showMenu ? Icons.arrow_drop_up : Icons.arrow_drop_down,
-                color: showMenu ? Colors.blue : Colors.grey,
-              ),
-            ],
-          ),
-        );
-      },
-      builder: (BuildContext context, String value, int index) {
-        Widget child = Container(
-          // width: screenWidth,
-          height: 32,
-          margin: const EdgeInsets.only(bottom: 10),
-          alignment: Alignment.centerLeft,
-          child: Text(
-            value,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Colors.black,
-            ),
-          ),
-        );
-
-        child = CheckedPopupMenuItem<String>(
-          child: child,
-          checked: controller.selectedIndex == index,
-          onTap: () {
-            controller.selectedIndex = index;
-            onSelected?.call(index);
-            controller.hideMenu();
-          },
-        );
-
-        return child;
-      },
-      separatedBuilder: (BuildContext context, String value, int index) {
-        return const Divider(
-          height: 1,
-          indent: 17,
-          endIndent: 17,
-        );
-      },
-      onSelected: onSelected,
-    );
   }
 }

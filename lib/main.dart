@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:widgets/router/page_router_delegate.dart';
 import 'package:widgets/router/router_parser.dart';
 
 void main() {
@@ -12,9 +13,11 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   final PageRouterInfoParser _pageRouterInfoParser = PageRouterInfoParser();
+  final PageRouterDelegate _delegate = PageRouterDelegate();
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-        routeInformationParser: _pageRouterInfoParser, routerDelegate: null);
+        routeInformationParser: _pageRouterInfoParser,
+        routerDelegate: _delegate);
   }
 }
