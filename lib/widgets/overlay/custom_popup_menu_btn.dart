@@ -2,69 +2,95 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
+///默认条目高度
 const double defaultMenuItemHeight = 42.0;
 
+///控制器
 class PopupMenuController with ChangeNotifier {
+  ///初始化条目高度、默认选中的item，是否显示弹窗
   PopupMenuController(
       {this.menuItemHeight = defaultMenuItemHeight,
       this.selectedIndex = 0,
       bool showMenu = false})
       : _showNotifier = ValueNotifier<bool>(showMenu);
 
+  ///条目高度
   final double menuItemHeight;
+
+  ///控制是否显示条目
   final ValueNotifier<bool> _showNotifier;
+
+  ///默认显示的item
   int selectedIndex = 0;
-  OverlayEntry _overlayEntry;
+
+  ///弹窗布局
+  late OverlayEntry _overlayEntry;
 
   ///menu所在位置
   // Offset _menuPosition = Offset.zero;
-  RelativeRect _menuPosition;
+  late RelativeRect _menuPosition;
 
   set _position(RelativeRect position) {
     _menuPosition = position;
     refreshMenu();
   }
 
-  bool get isShow => _showNotifier.value && _overlayEntry != null;
+  ///是否显示
+  bool get isShow => _showNotifier.value;
 
+  ///显示menu
   void showMenu(BuildContext context) {
-    Overlay.of(context).insert(_overlayEntry);
+    Overlay.of(context)?.insert(_overlayEntry);
     _showNotifier.value = true;
   }
 
+  ///隐藏menu
   void hideMenu() {
     _removeMenu();
     _showNotifier.value = false;
   }
 
+  ///移除menu
   void _removeMenu() {
-    _overlayEntry?.remove();
+    _overlayEntry.remove();
   }
 
+  ///刷新menu内容
   void refreshMenu() {
     notifyListeners();
   }
 }
 
+///菜单显示的位置
 enum PopupMenuLocation {
+  ///按钮下方
   bottom,
+
+  ///按钮上方
   top,
 }
 
+///构建菜单条目的回调
 typedef OnMenuItemBuilder<T> = Widget Function(
     BuildContext context, T value, int index);
+
+///构建菜单按钮的回调
 typedef OnMenuBtnChildBuilder<T> = Widget Function(
     BuildContext context, T value, bool showMenu);
+
+///条目之间的分割线
 typedef OnMenuSeparatedBuilder<T> = Widget Function(
     BuildContext context, T value, int index);
 
+///菜单按钮
 class PopupMenuBtn<T> extends StatefulWidget {
+  ///设置菜单按钮的各种参数
   const PopupMenuBtn({
-    Key key,
-    @required this.list,
+    Key? key,
+    required this.list,
     this.onSelected,
-    @required this.builder,
-    @required this.childBuilder,
+    required this.builder,
+    required this.childBuilder,
     this.separatedBuilder,
     this.menuLocation = PopupMenuLocation.bottom,
     this.controller,
@@ -75,18 +101,44 @@ class PopupMenuBtn<T> extends StatefulWidget {
     this.backgroundDecoration,
     this.fullScreenWidth = true,
   }) : super(key: key);
+
+  ///菜单列表数据
   final List<T> list;
-  final ValueChanged<int> onSelected;
+
+  ///选中的条目
+  final ValueChanged<int>? onSelected;
+
+  ///条目样式
   final OnMenuItemBuilder<T> builder;
-  final OnMenuSeparatedBuilder<T> separatedBuilder;
+
+  ///分割线样式
+  final OnMenuSeparatedBuilder<T>? separatedBuilder;
+
+  ///按钮样式
   final OnMenuBtnChildBuilder<T> childBuilder;
-  final PopupMenuController controller;
+
+  ///控制器
+  final PopupMenuController? controller;
+
+  ///显示位置
   final PopupMenuLocation menuLocation;
+
+  ///菜单下方/上方空白区域是否有模糊效果
   final bool enableBlur;
-  final CustomClipper<Path> backgroundClipper;
+
+  ///不满全屏时菜单的边框样式
+  final CustomClipper<Path>? backgroundClipper;
+
+  ///背景颜色
   final Color backgroundColor;
-  final BoxConstraints backgroundConstraints;
-  final BoxDecoration backgroundDecoration;
+
+  ///宽高约束
+  final BoxConstraints? backgroundConstraints;
+
+  ///设置圆角等样式
+  final BoxDecoration? backgroundDecoration;
+
+  ///是否铺满屏幕宽度
   final bool fullScreenWidth;
 
   @override
@@ -95,15 +147,12 @@ class PopupMenuBtn<T> extends StatefulWidget {
 
 class _PopupMenuBtnState<T> extends State<PopupMenuBtn<T>> {
   List<T> get list => widget.list;
-  PopupMenuController _controller;
+  late PopupMenuController _controller;
 
   @override
   void initState() {
     super.initState();
-    _controller = widget.controller;
-
-    ///判断是否为null，如果是null则给其默认值
-    _controller ??= PopupMenuController();
+    _controller = widget.controller ?? PopupMenuController();
     _initMenu();
     Future<void>.delayed(const Duration(milliseconds: 200), () {
       _calculationLocation();
@@ -124,23 +173,36 @@ class _PopupMenuBtnState<T> extends State<PopupMenuBtn<T>> {
 
   ///计算menu位置
   void _calculationLocation() {
-    final RenderBox button = context.findRenderObject() as RenderBox;
-    final RenderBox overlay =
-        Overlay.of(context).context.findRenderObject() as RenderBox;
+    final RenderObject? buttonRenderObject = context.findRenderObject();
+
+    final RenderObject? overlayRenderObject =
+        Overlay.of(context)?.context.findRenderObject();
+
     Offset offset;
     if (widget.menuLocation == PopupMenuLocation.top) {
       offset = Offset.zero;
+    } else if (buttonRenderObject is RenderBox) {
+      offset = buttonRenderObject.size.bottomLeft(Offset.zero);
     } else {
-      offset = button.size.bottomLeft(Offset.zero);
+      offset = Offset.zero;
+    }
+    Rect rect;
+    Rect container;
+    if (buttonRenderObject is RenderBox && overlayRenderObject is RenderBox) {
+      rect = Rect.fromPoints(
+        buttonRenderObject.localToGlobal(offset, ancestor: overlayRenderObject),
+        buttonRenderObject.localToGlobal(offset, ancestor: overlayRenderObject),
+      );
+      container = Offset.zero & overlayRenderObject.size;
+    } else {
+      rect = Rect.zero;
+      container = Rect.zero;
     }
 
     ///确定menu显示的位置
     final RelativeRect position = RelativeRect.fromRect(
-      Rect.fromPoints(
-        button.localToGlobal(offset, ancestor: overlay),
-        button.localToGlobal(offset, ancestor: overlay),
-      ),
-      Offset.zero & overlay.size,
+      rect,
+      container,
     );
     _controller._position = position;
   }
@@ -148,7 +210,7 @@ class _PopupMenuBtnState<T> extends State<PopupMenuBtn<T>> {
   ///初始化Overlay
   void _initMenu() {
     _controller._overlayEntry = OverlayEntry(builder: (BuildContext context) {
-      return _PopupMenuWidget<T>(
+      final Widget child = _PopupMenuWidget<T>(
         list: widget.list,
         controller: _controller,
         menuLocation: widget.menuLocation,
@@ -163,32 +225,46 @@ class _PopupMenuBtnState<T> extends State<PopupMenuBtn<T>> {
           _controller.hideMenu();
         },
       );
+
+      return child;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    Widget child = InkWell(
       onTap: () {
         _controller.showMenu(context);
       },
       child: ValueListenableBuilder<bool>(
         valueListenable: _controller._showNotifier,
-        builder: (BuildContext context, bool value, Widget child) {
+        builder: (BuildContext context, bool value, Widget? child) {
           return widget.childBuilder(
               context, list[_controller.selectedIndex], value);
         },
       ),
     );
+    child = WillPopScope(
+      child: child,
+      onWillPop: () async {
+        bool canPop = true;
+        if (_controller.isShow) {
+          _controller.hideMenu();
+          canPop = false;
+        }
+        return canPop;
+      },
+    );
+    return child;
   }
 }
 
 class _PopupMenuWidget<T> extends StatefulWidget {
   const _PopupMenuWidget({
-    Key key,
-    @required this.list,
-    @required this.controller,
-    @required this.itemBuilder,
+    Key? key,
+    required this.list,
+    required this.controller,
+    required this.itemBuilder,
     this.onCancel,
     this.separatedBuilder,
     this.menuLocation = PopupMenuLocation.bottom,
@@ -200,16 +276,16 @@ class _PopupMenuWidget<T> extends StatefulWidget {
     this.fullScreenWidth = true,
   }) : super(key: key);
   final List<T> list;
-  final VoidCallback onCancel;
+  final VoidCallback? onCancel;
   final OnMenuItemBuilder<T> itemBuilder;
-  final OnMenuSeparatedBuilder<T> separatedBuilder;
+  final OnMenuSeparatedBuilder<T>? separatedBuilder;
   final PopupMenuController controller;
   final PopupMenuLocation menuLocation;
   final bool enableBlur;
-  final CustomClipper<Path> backgroundClipper;
+  final CustomClipper<Path>? backgroundClipper;
   final Color backgroundColor;
-  final BoxConstraints backgroundConstraints;
-  final BoxDecoration backgroundDecoration;
+  final BoxConstraints? backgroundConstraints;
+  final BoxDecoration? backgroundDecoration;
   final bool fullScreenWidth;
 
   @override
@@ -255,8 +331,10 @@ class __PopupMenuWidgetState<T> extends State<_PopupMenuWidget<T>> {
         child: widget.itemBuilder(context, value, i),
       );
       children.add(item);
-      if (widget.separatedBuilder != null) {
-        children.add(widget.separatedBuilder(context, value, i));
+      final Widget? separated =
+          widget.separatedBuilder?.call(context, value, i);
+      if (separated != null) {
+        children.add(separated);
       }
     }
     child = Column(
@@ -372,9 +450,9 @@ class __PopupMenuWidgetState<T> extends State<_PopupMenuWidget<T>> {
 
 class CheckedPopupMenuItem<T> extends StatelessWidget {
   const CheckedPopupMenuItem(
-      {Key key, @required this.child, this.checked = false, this.onTap})
+      {Key? key, required this.child, this.checked = false, this.onTap})
       : super(key: key);
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final bool checked;
   final Widget child;
 

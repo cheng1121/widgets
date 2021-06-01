@@ -16,10 +16,10 @@ enum PageAnimStyle {
 ///[T] 是pop的返回值
 class AppPage<T> extends Page<T> {
   const AppPage({
-    LocalKey localKey,
-    @required this.page,
-    @required String routeName,
-    Object arguments,
+     LocalKey? localKey,
+    required this.page,
+    required String routeName,
+    Object? arguments,
     this.fullscreenDialog = false,
     this.maintainState = true,
     this.pageAnimStyle = PageAnimStyle.ANDROID,
@@ -36,7 +36,7 @@ class AppPage<T> extends Page<T> {
   final Widget page;
 
   ///IOS页面标题
-  final String title;
+  final String? title;
 
   ///是否保留页面状态
   final bool maintainState;
@@ -47,12 +47,12 @@ class AppPage<T> extends Page<T> {
 
   ///[pageAnimStyle]参数不等于[PageAnimStyle.ANDROID]和
   ///[PageAnimStyle.IOS]时有效的参数
-  final AnimatedWidget customAnim;
+  final AnimatedWidget? customAnim;
   final Duration transitionDuration;
   final bool opaque;
   final bool barrierDismissible;
-  final Color barrierColor;
-  final String barrierLabel;
+  final Color? barrierColor;
+  final String? barrierLabel;
 
   @override
   Route<T> createRoute(BuildContext context) {
@@ -164,7 +164,7 @@ class AppPage<T> extends Page<T> {
 ///desc: 自定义路由动画
 class CustomPageRoute<T> extends PageRoute<T> {
   CustomPageRoute({
-    @required this.builder,
+    required this.builder,
     this.style = PageAnimStyle.NO,
     this.transitionDuration = const Duration(milliseconds: 0),
     this.opaque = true,
@@ -173,62 +173,62 @@ class CustomPageRoute<T> extends PageRoute<T> {
     this.barrierLabel,
     this.maintainState = true,
     this.customAnim,
-    RouteSettings settings,
+    RouteSettings? settings,
     bool fullscreenDialog = false,
   }) : super(settings: settings, fullscreenDialog: fullscreenDialog);
 
   CustomPageRoute.fade({
-    @required this.builder,
+    required this.builder,
     this.transitionDuration = const Duration(milliseconds: 300),
     this.opaque = true,
     this.barrierDismissible = false,
     this.barrierColor,
     this.barrierLabel,
     this.maintainState = true,
-    RouteSettings settings,
+    RouteSettings? settings,
     bool fullscreenDialog = false,
   })  : style = PageAnimStyle.FADE,
         customAnim = null,
         super(settings: settings, fullscreenDialog: fullscreenDialog);
 
   CustomPageRoute.slide({
-    @required this.builder,
+    required this.builder,
     this.transitionDuration = const Duration(milliseconds: 300),
     this.opaque = true,
     this.barrierDismissible = false,
     this.barrierColor,
     this.barrierLabel,
     this.maintainState = true,
-    RouteSettings settings,
+    RouteSettings? settings,
     bool fullscreenDialog = false,
   })  : style = PageAnimStyle.SLIDE,
         customAnim = null,
         super(settings: settings, fullscreenDialog: fullscreenDialog);
 
   CustomPageRoute.scale({
-    @required this.builder,
+    required this.builder,
     this.transitionDuration = const Duration(milliseconds: 300),
     this.opaque = true,
     this.barrierDismissible = false,
     this.barrierColor,
     this.barrierLabel,
     this.maintainState = true,
-    RouteSettings settings,
+    RouteSettings? settings,
     bool fullscreenDialog = false,
   })  : style = PageAnimStyle.SCALE,
         customAnim = null,
         super(settings: settings, fullscreenDialog: fullscreenDialog);
 
   CustomPageRoute.custom({
-    @required this.builder,
-    @required this.customAnim,
+    required this.builder,
+    required this.customAnim,
     this.transitionDuration = const Duration(milliseconds: 300),
     this.opaque = true,
     this.barrierDismissible = false,
     this.barrierColor,
     this.barrierLabel,
     this.maintainState = true,
-    RouteSettings settings,
+    RouteSettings? settings,
     bool fullscreenDialog = false,
   })  : style = PageAnimStyle.CUSTOM,
         super(settings: settings, fullscreenDialog: fullscreenDialog);
@@ -236,7 +236,7 @@ class CustomPageRoute<T> extends PageRoute<T> {
   final WidgetBuilder builder;
   final PageAnimStyle style;
 
-  final AnimatedWidget customAnim;
+  final AnimatedWidget? customAnim;
 
   @override
   final Duration transitionDuration;
@@ -248,10 +248,10 @@ class CustomPageRoute<T> extends PageRoute<T> {
   final bool barrierDismissible;
 
   @override
-  final Color barrierColor;
+  final Color? barrierColor;
 
   @override
-  final String barrierLabel;
+  final String? barrierLabel;
 
   @override
   final bool maintainState;
@@ -277,7 +277,7 @@ class CustomPageRoute<T> extends PageRoute<T> {
       case PageAnimStyle.SCALE:
         return _scale(animation, child);
       case PageAnimStyle.CUSTOM:
-        return customAnim;
+        return customAnim!;
       default:
         return child;
     }
